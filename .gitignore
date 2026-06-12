@@ -1,3 +1,11 @@
+# arquivos de teste
+teste-read-file.py
+
+# outros
+.python-version
+uv.lock
+pyproject.toml
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
