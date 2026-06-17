@@ -5,6 +5,9 @@ teste-read-file.py
 .python-version
 uv.lock
 pyproject.toml
+sandbox-boxplot.py
+sandbox-csv.py
+exemplo-boxplot.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
