@@ -43,12 +43,21 @@ def LerDados(caminho:str) -> List[List[float]]:
 
 # LEITURA DO ARQUIVO CSV PARA O BOXPLOT -------------------------------------
 
+# estrutura do CSV
+# +--------------+--------------------+-----------------------------------+
+# |  instance ID |  valor-literatura  |  valores dos testes               |
+# +--------------+--------------------+-----------------------------------+
+# |              |                    |        |        |        |        |                               |
+# |              |                    |        |        |        |        |
+# |              |                    |        |        |        |        |
+# |              |                    |        |        |        |        |
+# +--------------+--------------------+-----------------------------------+
+
 def _module(x:float) -> float:
     """
     retorna o módulo de x
     """
     return x if (x >= 0) else -x
-
 
 def _ToDict(linha:List[str]) -> Dict[str, List[float]]:
     """
