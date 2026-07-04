@@ -1,6 +1,7 @@
 from typing import Any, List, Dict, Tuple, Set
 from dataclasses import dataclass
 from cromossomo import Cromossomo
+from functools import reduce
 import re
 import csv
 import random
@@ -32,6 +33,8 @@ class Teste():
         self._populacaoAtual : List[Cromossomo] = []
         self._populacaoRankeada : List[Cromossomo] = []
 
+        self._linhasDescobertas : Set[int] = set()
+
     # ------ API ---------
     # lerDados()               -> Dados filtrados
     # gerarPopulacaoInicial()  -> Cromossomos da população inicial
@@ -50,6 +53,10 @@ class Teste():
         while numCromossomosGerados <= self.tamPop:
             # geramos um individuo
             individuo : Cromossomo = self._gerarIndividuo()
+            ehSol : bool = self.validarSolucao(individuo)
+
+            if not ehSol:
+                print("ERRO : Solucao Inválida Gerada")
 
             # adicionamos o individuo à população - mantendo a ordem
             self._insereIndividuo(individuo)
@@ -85,6 +92,31 @@ class Teste():
     def getSolucao(self) -> Cromossomo:
         return self._populacaoAtual[-1]
 
+    def validarSolucao(self,individuo:Cromossomo|None = None) -> bool:
+        solucao : Set[int]
+        self._linhasDescobertas : Set[int] = set()
+
+        if individuo is not None:
+            solucao : Set[int] = individuo.getGenes()
+        else:
+            solucao : Set[int] = self.getSolucao().getGenes()
+
+        vetorValidacao : List[bool] = [False]*(self.getNumLinhas() + 1)
+        vetorValidacao[0] = True
+
+        for coluna in solucao:
+            linhas : Set[int] = self.getLinhasDaColuna(coluna)
+            for linha in linhas:
+                vetorValidacao[linha] = True
+
+        for i in range(1,self.numLinhas+1):
+            if not vetorValidacao[i]:
+                self._linhasDescobertas.add(i)
+
+        resultado : bool = reduce(lambda x, y : x and y, vetorValidacao)
+
+        return resultado
+
     # ---- FUNÇÕES AUXILIARES ------
     # <gerarPopulacaoInicial()>
     # _gerarIndividuo()                   -> gera um cromossomo
@@ -99,13 +131,14 @@ class Teste():
         while not (len(linhasDescobertas)==0):
             # selecionamos uma linha i aleatoriamente das linhasDescobertas
             linha : int = random.choice(list(linhasDescobertas))
-            linhasDescobertas.remove(linha)
-
+            
             # pegamos o conjunto de colunas que cobrem a *linha*
             colunasQueCobrem : Set = self._colunasPorLinha[linha]
 
             # slecionamos a coluna j que cobre o maior número de linhas descobertas incluindo a *linha*
-            melhorColuna : int = self._melhorColuna(colunasQueCobrem,linhasDescobertas)
+            melhorColuna : int = self._melhorColuna(colunasQueCobrem,linhasDescobertas,linha=linha)
+
+            linhasDescobertas.remove(linha)
             
             if melhorColuna != 0:
                 # conjunto das linhas cobertas pela melhor coluna
@@ -119,32 +152,64 @@ class Teste():
                     coberturaPorLinha[line] += 1
 
                 linhasDescobertas = linhasDescobertas - linhasCobertas
+            else:
+                print(f'ERRO _melhorColuna() = 0  com linha = {linha}')
         
         individuo : Cromossomo = Cromossomo(genesEscolhidos)
         individuo.setRedundancias(coberturaPorLinha)
         self._eliminarRedundancias(individuo)
         individuo.avaliarQualidade(self.pesoColunas)
+
         return individuo
 
-    def _melhorColuna(self,colunas:Set[int],linhasDescobertas:Set[int]) -> int:
+    def _melhorColuna(self,colunas:Set[int],linhasDescobertas:Set[int],linha:int|None=None, ) -> int:
         melhorColuna = 0
-        melhorIndice = float('inf')
+        melhorIndice = float('inf')   
+        melhorCustoPorLinha : float = float('inf') 
 
-        for coluna in colunas:
-            custoColuna : float = self.pesoColunas[coluna]
-            linhasCobertas : Set = self._linhasPorColuna[coluna]
-            intersecao : Set = linhasCobertas & linhasDescobertas
+        if linha is not None:
+            # colunas que cobrem a linha
+            colunasQueCobrem : Set[int] = self.getColunasDaLinha(linha)
 
-            norma = len(intersecao)
-            indice = melhorIndice
-            if norma != 0:
-                indice : float = custoColuna / len(intersecao)
+            if len(colunasQueCobrem) == 0:
+                print(f'\n 0 Colunas Cobrem a Linha {linha}')
+            else:
+                # calculamos a taxa de cobertura de cada coluna
+                for col in colunasQueCobrem:
+                    custoPorLinha : float = self._taxaCobertura(col,linhasDescobertas)
+                    
+                    if custoPorLinha < melhorCustoPorLinha:
+                        melhorColuna = col
 
-            if indice < melhorIndice:
-                melhorColuna = coluna
-                melhorIndice = indice
+        else:
+            for coluna in colunas:
+                custoColuna : float = self.pesoColunas[coluna]
+                linhasCobertas : Set = self._linhasPorColuna[coluna]
+                intersecao : Set = linhasCobertas & linhasDescobertas
+
+                norma = len(intersecao)
+                indice = melhorIndice
+                if norma != 0:
+                    indice : float = custoColuna / len(intersecao)
+
+                if indice < melhorIndice:
+                    melhorColuna = coluna
+                    melhorIndice = indice
 
         return melhorColuna
+
+    def _taxaCobertura(self,coluna:int,linhasDescobertas:Set[int]) -> float:
+        """
+        Calcula a taxa de cobertura da *coluna* sobre as *linhasDescobertas*
+        O resultado nunca será zero porque a coluna sempre cobrirá pelo menos 1 linha (verificação enterior necessária)
+        """
+        pesoColuna : float = self.getPesoDaColuna(coluna)
+        linhasCobertas : Set[int] = self.getLinhasDaColuna(coluna)
+        cobertura : Set[int] = linhasCobertas & linhasDescobertas
+        normaCobertura : int = len(cobertura) # deve ser pelo menos '
+
+        taxaCobertura = pesoColuna / normaCobertura
+        return taxaCobertura
 
     def _insereIndividuo(self,individuo:Cromossomo):
         pesos = [-ind.getPeso() for ind in self._populacaoAtual]
@@ -213,7 +278,6 @@ class Teste():
             self._colunasPorLinha.update({key:value})
 
         for coluna in self._linhasPorColuna:
-            #print(f'DEBUG : {coluna}')
             linhas = self._linhasPorColuna[coluna]
             for linha in linhas:
                 self._colunasPorLinha[int(linha)].update({int(coluna)})
@@ -246,11 +310,33 @@ class Teste():
 
 
     def __str__(self):
+        # atributos ---------------------------------
+
+        # numLinhas : int = -1
+        # numColunas : int = -1
+        # tamPop : int
+        # dados: List[List[float]] = []               # linhas do documento de texto
+        # self.pesoColunas : Dict[int, float] = {}           # {colunaID : peso}
+
+        # self._linhasPorColuna : Dict[int, Set] = {}
+        # self._colunasPorLinha : Dict[int, Set] = {}
+
+        # self._populacaoAtual : List[Cromossomo] = []
+        # self._populacaoRankeada : List[Cromossomo] = []
+
+        # self._linhasDescobertas : Set[int] = set()
+
         bordaH : str = '-------------------------------------\n'
 
         nL : str = f'NUM LINHAS   : {self.numLinhas}\n'
         nC : str = f'NUM COLUNAS  : {self.numColunas}\n'
 
+        pC : str = '' #self._stringPesoColunas()
+        lPC : str = self._stringLinhasPorColuna()
+
+        return bordaH + nL + nC + bordaH + pC + bordaH + lPC + bordaH
+
+    def _stringPesoColunas(self) -> str:
         p = self.getPesoColunas()
         pC : str = 'Peso Colunas\n'
         for i in p:
@@ -259,6 +345,9 @@ class Teste():
             s = f'> {key} : {value}\n'
             pC = pC + s
 
+        return pC
+
+    def _stringLinhasPorColuna(self) -> str:
         l = self.getLinhasPorColunas()
         lPC : str = 'Linhas Por Colunas\n'
         for i in l:
@@ -266,8 +355,7 @@ class Teste():
             value = str(l[i])
             s = f'> {key} : {value}\n'
             lPC = lPC + s
-
-        return bordaH + nL + nC + bordaH + pC + bordaH + lPC + bordaH
+        return lPC
 
     def exibirPopAtual(self):
         print('>> POPULAÇÃO ATUAL')
@@ -291,6 +379,9 @@ class Teste():
     def getPesoColunas(self) -> Dict[int, float]:
         return self.pesoColunas
     
+    def getPesoDaColuna(self,coluna) -> float:
+        return self.pesoColunas[coluna]
+    
     def getLinhasPorColunas(self) -> Dict[int, Set[int]]:
         return self._linhasPorColuna
     
@@ -299,6 +390,13 @@ class Teste():
 
     def getColunasPorLinha(self) -> Dict[int, Set[int]]:
         return self._colunasPorLinha
+    
+    def getColunasDaLinha(self,linha:int) -> Set[int]:
+        colunas = self._colunasPorLinha[linha]
+        return colunas
+
+    def getLinhasDescobertas(self) -> Set[int]:
+        return self._linhasDescobertas
 
     def setNumLinhas(self, num):
         self.numLinhas = num

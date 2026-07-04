@@ -113,3 +113,12 @@ def LerCSV(caminho:str) -> Dict[str, List[float]]:
             data.update(_ToDict(l))
     
     return data
+
+
+class Logger():
+    def __init__(self,fileName:str|None = None):
+        self._filename : str
+
+    def log(self,string:str):
+        
+        return

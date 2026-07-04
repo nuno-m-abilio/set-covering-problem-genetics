@@ -11,7 +11,7 @@ def main(caminho:str):
     #print('DADOS')
     #print(dados)
 
-    tamPop : int = 100
+    tamPop : int = 10000
 
     dados.setTamPop(tamPop)
     dados.gerarPopulacaoInicial()
@@ -44,10 +44,16 @@ def main(caminho:str):
         # ETAPA 7 : Atualização da População
 
         iter += 1
-        if iter == 100: PARADA = True
+        if iter == 1000: PARADA = True
 
     print('FIM')
     print(dados.getSolucao())
+    if dados.validarSolucao():
+        print('SOLUÇÃO VÁLIDA')
+    else:
+        print('SOLUÇÃO INVÁLIDA')
+        print(f'LINHAS DESCOBERTAS : {dados.getLinhasDescobertas()}')
+        print(dados)
 
 
 
