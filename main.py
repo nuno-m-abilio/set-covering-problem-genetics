@@ -6,34 +6,39 @@ from cromossomo import Cromossomo
 from sys import argv
 
 def main(caminho:str):
+    print(f'CAMINHO : {caminho}')
     # ETAPA 0 : Leitura dos Dados
     dados : Teste = utils.LerDados(caminho)
-    #print('DADOS')
-    #print(dados)
-
-    tamPop : int = 10000
-
-    dados.setTamPop(tamPop)
-    dados.gerarPopulacaoInicial()
-    #dados.exibirPopAtual()
-    #print('\n\nSELECIONADOS')
 
     # ETAPA 1 : Geração da população inicial
     # a população inicial é uma lista de cromossomos
     # um cromossomo é um tipo de dado que armazena o a soma da solução e uma lista com os genes
+
+    tamPop : int = 100
+    dados.setTamPop(tamPop)
+    dados.gerarPopulacaoInicial()
     
-    PARADA = True
+    PARADA = False
     iter = 0
     while not PARADA:
-        print(f'iter {iter}')
+        print(iter)
         selecionados : List[Cromossomo] = dados.selecionarCromossomos()
+        filho : Cromossomo = dados.cruzarCromossomos(selecionados)
+        filho = dados.mutarCromossomo(filho,iter)
 
-        novaPop : List[Cromossomo] = []
-        for _ in range(tamPop):
-            filho : Cromossomo = dados.cruzarCromossomos(selecionados)
-            novaPop.append(filho)
+        pesoMenosApto:float = dados.getCustoMenosApto()
+        pesoFilho:float = filho.getPeso()
 
-        dados.atualizaPopulacao(novaPop)
+        if pesoFilho < pesoMenosApto:
+            dados.insereFilho(filho)
+            iter += 1
+
+        #novaPop : List[Cromossomo] = []
+        #for _ in range(tamPop):
+        #    filho : Cromossomo = dados.cruzarCromossomos(selecionados)
+        #    novaPop.append(filho)
+
+        #dados.atualizaPopulacao(novaPop)
 
 
         # ETAPA 2 : Avaliação
@@ -43,8 +48,8 @@ def main(caminho:str):
         # ETAPA 6 : Busca Local
         # ETAPA 7 : Atualização da População
 
-        iter += 1
-        if iter == 1000: PARADA = True
+        #iter += 1
+        if iter == 300: PARADA = True
 
     print('FIM')
     print(dados.getSolucao())

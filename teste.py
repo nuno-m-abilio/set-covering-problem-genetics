@@ -6,6 +6,7 @@ import re
 import csv
 import random
 import bisect
+from math import exp
 
 class Teste():
     # ----- ATRIBUTOS -----
@@ -19,7 +20,8 @@ class Teste():
         self.numLinhas : int = -1
         self.numColunas : int = -1
 
-        self.tamPop : int
+        self.tamPop:int
+        self._taxaMutacaoMinima:float = 1
 
         self.dados: List[List[float]] = []               # linhas do documento de texto
 
@@ -40,14 +42,14 @@ class Teste():
     # gerarPopulacaoInicial()  -> Cromossomos da população inicial
     # selecionarCromossomos()  -> Lista de cromossomos reprodutores
     # cruzarCromossomos()      -> Filhos dos cromossomos reproduzidos
-    # mutarPopulacao()         -> Muta a população futura
+    # mutarCromossomo()         -> Muta a população futura
     # buscaLocal()             -> 
     # atualizaPopulacao()      -> Atualiza a população
     # getSolucao()             -> Retorna o melhor individuo gerado
     
     def gerarPopulacaoInicial(self):
         """
-        Cria uma populacao inicial de *tamanho* cromossomos.
+        Gera a população inicial de cromossomos ordenados em ordem de qualidade, da pior para a melhor
         """
         numCromossomosGerados = 0
         while numCromossomosGerados <= self.tamPop:
@@ -83,10 +85,32 @@ class Teste():
 
         return filho
     
+    def mutarCromossomo(self,indiv:Cromossomo,iter:int) -> Cromossomo:
+        """
+        Muta os genes de *indiv* de forma aleatória
+        """
+        mutado:Cromossomo = indiv
+
+        taxaMutacao:float = self._calcTaxaMutacao()
+        p:float = random.uniform(0.0,1.0)
+
+        if p < taxaMutacao:
+            mutado = self._mutar(indiv)
+
+        return mutado
+
     def atualizaPopulacao(self,novaPop:List[Cromossomo]):
         self._populacaoAtual : List[Cromossomo]= []
         for individuo in novaPop:
             self._insereIndividuo(individuo)
+        return
+
+    def insereFilho(self,filho:Cromossomo):
+        """
+        Remove a individuo menos apto da populacao e insere *filho*
+        """
+        removido:Cromossomo = self._populacaoAtual.pop(0)
+        self._insereIndividuo(filho)
         return
 
     def getSolucao(self) -> Cromossomo:
@@ -116,6 +140,8 @@ class Teste():
         resultado : bool = reduce(lambda x, y : x and y, vetorValidacao)
 
         return resultado
+
+
 
     # ---- FUNÇÕES AUXILIARES ------
     # <gerarPopulacaoInicial()>
@@ -212,6 +238,10 @@ class Teste():
         return taxaCobertura
 
     def _insereIndividuo(self,individuo:Cromossomo):
+        """
+        Insere um *individuo* na população em ordem decrescente de qualidade
+        os piores individuos ficam no começo
+        """
         pesos = [-ind.getPeso() for ind in self._populacaoAtual]
         posicao = bisect.bisect(pesos,-individuo.getPeso())
         self._populacaoAtual.insert(posicao,individuo)
@@ -308,6 +338,44 @@ class Teste():
 
         self.setPesoColunas(temp)
 
+    # ////
+
+    def _calcTaxaMutacao(self) -> float:
+        """
+        Calcula a taxa de mutacao variavel
+        """
+        custoMenosApto:float = self.getCustoMenosApto()
+        custoMaisApto:float = self.getCustoMaisApto()
+        expoente:float = -(custoMenosApto - custoMaisApto)/custoMenosApto
+        taxa:float = self._taxaMutacaoMinima /(1-exp(expoente))
+        return taxa
+
+    def _mutar(self,indiv:Cromossomo) -> Cromossomo:
+        mutado:Cromossomo = Cromossomo()
+
+        genes:Set[int] = indiv.getGenes().copy()
+
+        colunas:List[int] = []
+        for i in range(1,self.numColunas+1):
+            colunas.append(i)
+
+        tam:int = len(genes)
+
+        # selecionamos aleatoriamente um numero real entre 0 e 1
+        num:float = random.uniform(0.0,1.0)
+        teto:int = int(num*tam) + 1
+
+        for _ in range(1,teto):
+            col:int = random.choice(colunas)
+            colunas.remove(col)
+
+            genes.add(col)
+
+        mutado.setGenes(genes)
+        mutado.setRedundancias(self._calcularRedundancias(mutado.getGenes()))
+        self._eliminarRedundancias(mutado)
+        mutado.avaliarQualidade(self.pesoColunas)
+        return mutado
 
     def __str__(self):
         # atributos ---------------------------------
@@ -397,6 +465,15 @@ class Teste():
 
     def getLinhasDescobertas(self) -> Set[int]:
         return self._linhasDescobertas
+    
+
+    def getCustoMenosApto(self) -> float:
+        custo:float = self._populacaoAtual[0].getPeso()
+        return custo
+    
+    def getCustoMaisApto(self) -> float:
+        custo:float = self._populacaoAtual[-1].getPeso()
+        return custo
 
     def setNumLinhas(self, num):
         self.numLinhas = num
