@@ -16,6 +16,7 @@ class Cromossomo():
     # avaliarQualidade()
 
     def avaliarQualidade(self,pesos):
+        self._peso = 0
         for gene in self._genes:
             self._peso += pesos[gene]
         return
@@ -54,7 +55,6 @@ class Cromossomo():
 
     def setGenes(self,genes:Set[int],):
         self._genes = genes
-
         return
     
     def setRedundancias(self,redundancias:list[int]):

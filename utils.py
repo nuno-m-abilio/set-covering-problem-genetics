@@ -62,7 +62,7 @@ def LerDados(caminho:str) -> Teste:
     dados : Teste
     with open(caminho, "+rt") as file:
         dados : Teste = ExtraiDados(file)
-
+        dados.setLinhasColunas()
     return dados
 
 

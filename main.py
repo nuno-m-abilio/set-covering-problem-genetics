@@ -21,10 +21,14 @@ def main(caminho:str):
     PARADA = False
     iter = 0
     while not PARADA:
-        print(iter)
+        if (iter % 100) == 0:
+            print(iter)
         selecionados : List[Cromossomo] = dados.selecionarCromossomos()
         filho : Cromossomo = dados.cruzarCromossomos(selecionados)
         filho = dados.mutarCromossomo(filho,iter)
+        #print(f'filho antes : {filho}')
+        filho = dados.buscaLocal(filho)
+        #print(f'filho depois : {filho}')
 
         pesoMenosApto:float = dados.getCustoMenosApto()
         pesoFilho:float = filho.getPeso()
@@ -49,7 +53,7 @@ def main(caminho:str):
         # ETAPA 7 : Atualização da População
 
         #iter += 1
-        if iter == 300: PARADA = True
+        if iter == 501 : PARADA = True
 
     print('FIM')
     print(dados.getSolucao())

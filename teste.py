@@ -18,7 +18,10 @@ class Teste():
 
     def __init__(self):
         self.numLinhas : int = -1
+        self._linhas:List[int] = []
+
         self.numColunas : int = -1
+        self._colunas:List[int] = []
 
         self.tamPop:int
         self._taxaMutacaoMinima:float = 1
@@ -36,6 +39,7 @@ class Teste():
         self._populacaoRankeada : List[Cromossomo] = []
 
         self._linhasDescobertas : Set[int] = set()
+
 
     # ------ API ---------
     # lerDados()               -> Dados filtrados
@@ -98,6 +102,60 @@ class Teste():
             mutado = self._mutar(indiv)
 
         return mutado
+
+    def buscaLocal(self,indiv:Cromossomo) -> Cromossomo:
+        #print('busca-local')
+        primeiraMelhoria:Cromossomo = indiv
+
+        genes:Set[int] = indiv.getGenes().copy()
+        #print(f'genes = {genes}')
+        colunasDisponiveis:Set[int] = set(self._colunas) - genes
+        #print(f'colunas-disponiveis = {colunasDisponiveis}')
+
+        PARAR = False
+        while not PARAR:
+            #colunasDisponiveis = colunasD
+            for coluna in colunasDisponiveis:
+                #print(f'coluna = {coluna}')
+                removidas:Set[int] = set()
+                pesoColuna:float = self.getPesoDaColuna(coluna)
+                linhasCobertas:Set[int] = self.getLinhasDaColuna(coluna)
+        
+                for gene in genes:
+                    #print(f'coluna {coluna} | gene {gene}')
+                    pesoGene:float = self.getPesoDaColuna(gene)
+                    linhasGene:Set[int] = self.getLinhasDaColuna(gene)
+                    #print(f'linhas{gene} = {linhasGene}')
+                    #print(f'linhasCobertas = {linhasCobertas}')
+                    intersec:Set[int] = linhasCobertas & linhasGene
+                    #print(f'intersec = {intersec}')
+
+                    if len(linhasGene-intersec)==0 and pesoColuna < pesoGene:
+                        #colunasD.remove(coluna)
+                        genes.add(coluna)
+                        genes.remove(gene)
+                        removidas.add(gene)
+                        #print('\n AHHHHH \n')
+                        #print(f'removido = {gene}')
+                        #print(f'adicionado = {coluna}')
+
+                #print(f'removidas = {removidas}')
+                if len(removidas) != 0:
+                    primeiraMelhoria.setGenes(genes)
+                    primeiraMelhoria.setRedundancias(self._calcularRedundancias(genes))
+                    self._eliminarRedundancias(primeiraMelhoria)
+                    primeiraMelhoria.avaliarQualidade(self.pesoColunas)
+                    #colunasD = colunasD | removidas
+                    #print(f'colunas-disponiveis = {colunasDisponiveis}')
+
+                #colunasD.remove(coluna)
+
+            PARAR = True
+
+        #print('\n -------------------------------------- \n')
+
+
+        return primeiraMelhoria
 
     def atualizaPopulacao(self,novaPop:List[Cromossomo]):
         self._populacaoAtual : List[Cromossomo]= []
@@ -496,3 +554,12 @@ class Teste():
 
     def setColunasPorLinhas(self, cpl):
         self._colunasPorLinha = cpl
+
+
+    def setLinhasColunas(self):
+        for j in range(1,self.numColunas+1):
+           self._colunas.append(j)
+
+        for i in range(1,self.numLinhas+1):
+           self._linhas.append(i)
+        return
