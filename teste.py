@@ -24,14 +24,11 @@ class Teste():
         self._colunas:List[int] = []
 
         self.tamPop:int
-        self._taxaMutacaoMinima:float = 1
+        self._taxaMutacaoMinima:float # precisa ser inicializado
 
-        self.dados: List[List[float]] = []               # linhas do documento de texto
+        self.dados: List[List[float]] = []
 
-        self.pesoColunas : Dict[int, float] = {}           # {colunaID : peso}
-        #self.linhasPorColuna : Dict[int, List[int]] = {} # {colunaID : [linhas cobertas pela coluna]}
-        #self.colunasPorLinha : Dict[int, List[int]] = {} # {linhaID : [colunas cobertas pela linha]}
-
+        self.pesoColunas : Dict[int, float] = {}
         self._linhasPorColuna : Dict[int, Set] = {}
         self._colunasPorLinha : Dict[int, Set] = {}
 
@@ -157,11 +154,22 @@ class Teste():
 
         return primeiraMelhoria
 
-    def atualizaPopulacao(self,novaPop:List[Cromossomo]):
-        self._populacaoAtual : List[Cromossomo]= []
-        for individuo in novaPop:
-            self._insereIndividuo(individuo)
-        return
+    def atualizaPopulacao(self,individuo:Cromossomo) -> bool:
+        """
+        Avalia se o *individuo* deve ou não ser inserido na população. Caso o custo de *individuo*
+        seja menor do que o custo do menos apto, então o menos apto é retirado da população e *individuo*
+        é inserido. Retorna TRUE caso a população tenha sido atualizada e FALSE, caso contrário.
+        """
+        atualizou:bool = False
+
+        pesoMenosApto:float = self.getCustoMenosApto()
+        pesoFilho:float = individuo.getPeso()
+
+        if pesoFilho < pesoMenosApto:
+            self.insereFilho(individuo)
+            atualizou = True
+
+        return atualizou
 
     def insereFilho(self,filho:Cromossomo):
         """
@@ -405,7 +413,10 @@ class Teste():
         custoMenosApto:float = self.getCustoMenosApto()
         custoMaisApto:float = self.getCustoMaisApto()
         expoente:float = -(custoMenosApto - custoMaisApto)/custoMenosApto
-        taxa:float = self._taxaMutacaoMinima /(1-exp(expoente))
+        if expoente == 0:
+            taxa = float('inf')
+        else:
+            taxa:float = self._taxaMutacaoMinima /(1-exp(expoente))
         return taxa
 
     def _mutar(self,indiv:Cromossomo) -> Cromossomo:
@@ -435,33 +446,6 @@ class Teste():
         mutado.avaliarQualidade(self.pesoColunas)
         return mutado
 
-    def __str__(self):
-        # atributos ---------------------------------
-
-        # numLinhas : int = -1
-        # numColunas : int = -1
-        # tamPop : int
-        # dados: List[List[float]] = []               # linhas do documento de texto
-        # self.pesoColunas : Dict[int, float] = {}           # {colunaID : peso}
-
-        # self._linhasPorColuna : Dict[int, Set] = {}
-        # self._colunasPorLinha : Dict[int, Set] = {}
-
-        # self._populacaoAtual : List[Cromossomo] = []
-        # self._populacaoRankeada : List[Cromossomo] = []
-
-        # self._linhasDescobertas : Set[int] = set()
-
-        bordaH : str = '-------------------------------------\n'
-
-        nL : str = f'NUM LINHAS   : {self.numLinhas}\n'
-        nC : str = f'NUM COLUNAS  : {self.numColunas}\n'
-
-        pC : str = '' #self._stringPesoColunas()
-        lPC : str = self._stringLinhasPorColuna()
-
-        return bordaH + nL + nC + bordaH + pC + bordaH + lPC + bordaH
-
     def _stringPesoColunas(self) -> str:
         p = self.getPesoColunas()
         pC : str = 'Peso Colunas\n'
@@ -490,6 +474,49 @@ class Teste():
 
         return
 
+
+    # // special getters and setters ----------------------------------------------------------------
+    # ... getters
+
+    def getPesoDaColuna(self,coluna) -> float:
+        return self.pesoColunas[coluna]
+
+    def getLinhasDaColuna(self, coluna:int) -> Set[int]:
+        return self._linhasPorColuna[coluna]
+
+    def getColunasDaLinha(self,linha:int) -> Set[int]:
+        colunas = self._colunasPorLinha[linha]
+        return colunas
+    
+    def getLinhasDescobertas(self) -> Set[int]:
+        return self._linhasDescobertas
+
+    def getCustoMenosApto(self) -> float:
+        custo:float = self._populacaoAtual[0].getPeso()
+        return custo
+
+    def getCustoMaisApto(self) -> float:
+        custo:float = self._populacaoAtual[-1].getPeso()
+        return custo
+
+    # // default getters and setters ----------------------------------------------------------------
+
+    # self.numLinhas : int = -1
+    # self._linhas:List[int] = []
+    # self.numColunas : int = -1
+    # self._colunas:List[int] = []
+    # self.tamPop:int
+    # self._taxaMutacaoMinima:float = 1
+    # self.dados: List[List[float]] = []
+    # self.pesoColunas : Dict[int, float] = {}
+    # self._linhasPorColuna : Dict[int, Set] = {}
+    # self._colunasPorLinha : Dict[int, Set] = {}
+    # self._populacaoAtual : List[Cromossomo] = []
+    # self._populacaoRankeada : List[Cromossomo] = []
+    # self._linhasDescobertas : Set[int] = set()
+
+    # ... getters
+
     def getNumLinhas(self) -> int:
         return self.numLinhas
     
@@ -499,39 +526,22 @@ class Teste():
     def getTamPop(self) -> int:
         return self.tamPop
 
+    def getTaxaMutMin(self) -> float:
+        return self._taxaMutacaoMinima
+
     def getDados(self) -> List[List[float]]:
         return self.dados
     
     def getPesoColunas(self) -> Dict[int, float]:
         return self.pesoColunas
     
-    def getPesoDaColuna(self,coluna) -> float:
-        return self.pesoColunas[coluna]
-    
     def getLinhasPorColunas(self) -> Dict[int, Set[int]]:
         return self._linhasPorColuna
     
-    def getLinhasDaColuna(self, coluna:int) -> Set[int]:
-        return self._linhasPorColuna[coluna]
-
     def getColunasPorLinha(self) -> Dict[int, Set[int]]:
         return self._colunasPorLinha
     
-    def getColunasDaLinha(self,linha:int) -> Set[int]:
-        colunas = self._colunasPorLinha[linha]
-        return colunas
-
-    def getLinhasDescobertas(self) -> Set[int]:
-        return self._linhasDescobertas
-    
-
-    def getCustoMenosApto(self) -> float:
-        custo:float = self._populacaoAtual[0].getPeso()
-        return custo
-    
-    def getCustoMaisApto(self) -> float:
-        custo:float = self._populacaoAtual[-1].getPeso()
-        return custo
+    # ... setters
 
     def setNumLinhas(self, num):
         self.numLinhas = num
@@ -543,6 +553,10 @@ class Teste():
         self.tamPop = tam
         return
     
+    def setTaxaMutMin(self,taxa:float):
+        self._taxaMutacaoMinima = taxa
+        return
+
     def setDados(self, dados):
         self.dados = dados
     
@@ -555,7 +569,7 @@ class Teste():
     def setColunasPorLinhas(self, cpl):
         self._colunasPorLinha = cpl
 
-
+    # ???
     def setLinhasColunas(self):
         for j in range(1,self.numColunas+1):
            self._colunas.append(j)
@@ -563,3 +577,33 @@ class Teste():
         for i in range(1,self.numLinhas+1):
            self._linhas.append(i)
         return
+
+
+# // others ----------------------------------------------------------------
+
+    def __str__(self):
+        # atributos ---------------------------------
+
+        # numLinhas : int = -1
+        # numColunas : int = -1
+        # tamPop : int
+        # dados: List[List[float]] = []               # linhas do documento de texto
+        # self.pesoColunas : Dict[int, float] = {}           # {colunaID : peso}
+
+        # self._linhasPorColuna : Dict[int, Set] = {}
+        # self._colunasPorLinha : Dict[int, Set] = {}
+
+        # self._populacaoAtual : List[Cromossomo] = []
+        # self._populacaoRankeada : List[Cromossomo] = []
+
+        # self._linhasDescobertas : Set[int] = set()
+
+        bordaH : str = '-------------------------------------\n'
+
+        nL : str = f'NUM LINHAS   : {self.numLinhas}\n'
+        nC : str = f'NUM COLUNAS  : {self.numColunas}\n'
+
+        pC : str = '' #self._stringPesoColunas()
+        lPC : str = self._stringLinhasPorColuna()
+
+        return bordaH + nL + nC + bordaH + pC + bordaH + lPC + bordaH

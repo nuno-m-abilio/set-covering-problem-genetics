@@ -1,73 +1,44 @@
-import utils
-from teste import Teste
-from typing import List
-from cromossomo import Cromossomo
+from typing import Dict, List
+from execution import Execution
+from source import run
+import json
 
-from sys import argv
+def main():
+    # lemos o arquivo de configuração dos casos de teste
+    with open('tests-config.json','r',encoding='utf-8') as file:
+        testsConfig:Dict = json.load(file)
 
-def main(caminho:str):
-    print(f'CAMINHO : {caminho}')
-    # ETAPA 0 : Leitura dos Dados
-    dados : Teste = utils.LerDados(caminho)
+    diretorio:str = testsConfig["diretorio"]
+    arquivosTeste:List[str] = testsConfig["testes"]
+    execucoes:int = testsConfig['execucoes']
 
-    # ETAPA 1 : Geração da população inicial
-    # a população inicial é uma lista de cromossomos
-    # um cromossomo é um tipo de dado que armazena o a soma da solução e uma lista com os genes
+    # parametros
+    parametros = testsConfig['parametros']
+    tamanhoPopulacao:List[int] = parametros['tamanho-populacao']
+    taxaMutMinima:List[float] = parametros['taxa-mutacao-minima']
+    numeroIteracoes:List[int] = parametros['numero-iteracoes']
 
-    tamPop : int = 100
-    dados.setTamPop(tamPop)
-    dados.gerarPopulacaoInicial()
+    # para cada execução do algoritmo, queremos armazenar o tempo que levou para concluir
+    # o custo da melhor solução encontrada
     
-    PARADA = False
-    iter = 0
-    while not PARADA:
-        if (iter % 100) == 0:
-            print(iter)
-        selecionados : List[Cromossomo] = dados.selecionarCromossomos()
-        filho : Cromossomo = dados.cruzarCromossomos(selecionados)
-        filho = dados.mutarCromossomo(filho,iter)
-        #print(f'filho antes : {filho}')
-        filho = dados.buscaLocal(filho)
-        #print(f'filho depois : {filho}')
+    i:int = 0
+    counter:int = 0
+    for teste in arquivosTeste:
+        bateria:Execution = Execution(teste)
+        for pop in tamanhoPopulacao:
+            for taxa in taxaMutMinima:
+                for numIter in numeroIteracoes:
+                    bateria.setParams(diretorio,teste,pop,taxa,numIter)
+                    for _ in range(execucoes):
+                        bateria.addExecution()
+                        bateria = run(bateria,i)
+                        i += 1
 
-        pesoMenosApto:float = dados.getCustoMenosApto()
-        pesoFilho:float = filho.getPeso()
-
-        if pesoFilho < pesoMenosApto:
-            dados.insereFilho(filho)
-            iter += 1
-
-        #novaPop : List[Cromossomo] = []
-        #for _ in range(tamPop):
-        #    filho : Cromossomo = dados.cruzarCromossomos(selecionados)
-        #    novaPop.append(filho)
-
-        #dados.atualizaPopulacao(novaPop)
-
-
-        # ETAPA 2 : Avaliação
-        # ETAPA 3 : Seleção
-        # ETAPA 4 : Cruzamento
-        # ETAPA 5 : Mutação
-        # ETAPA 6 : Busca Local
-        # ETAPA 7 : Atualização da População
-
-        #iter += 1
-        if iter == 501 : PARADA = True
-
-    print('FIM')
-    print(dados.getSolucao())
-    if dados.validarSolucao():
-        print('SOLUÇÃO VÁLIDA')
-    else:
-        print('SOLUÇÃO INVÁLIDA')
-        print(f'LINHAS DESCOBERTAS : {dados.getLinhasDescobertas()}')
-        print(dados)
-
-
+                    print('\n')
+                    bateria.dump(counter)
+                    bateria.refresh()
+                    counter += 1
+    return
 
 if __name__ == "__main__":
-    if len(argv) == 1:
-        print("ERROR : Missing argument file path")
-    else:
-        main(argv[1])
+    main()
