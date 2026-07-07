@@ -105,53 +105,74 @@ class Teste():
         primeiraMelhoria:Cromossomo = indiv
 
         genes:Set[int] = indiv.getGenes().copy()
-        #print(f'genes = {genes}')
-        colunasDisponiveis:Set[int] = set(self._colunas) - genes
-        #print(f'colunas-disponiveis = {colunasDisponiveis}')
 
+        colunasDisponiveis:Set[int] = set(self._colunas) - genes
+
+        # variaveis para a realização da troca
+        geneRemovido:int = -1
+        colunaAdicionada:int =-1
+
+        # variaveis para controle do loop
+        encontrouMelhoria:bool = False
         PARAR = False
         while not PARAR:
-            #colunasDisponiveis = colunasD
+            adicionar:int = -1
+            remover:int = -1
+
             for coluna in colunasDisponiveis:
-                #print(f'coluna = {coluna}')
                 removidas:Set[int] = set()
+
+                # informações da coluna
+                # // peso
                 pesoColuna:float = self.getPesoDaColuna(coluna)
+                # // linhas que a coluna cobre
                 linhasCobertas:Set[int] = self.getLinhasDaColuna(coluna)
-        
+
+                adicionar:int = -1
+                remover:int = -1
+
                 for gene in genes:
-                    #print(f'coluna {coluna} | gene {gene}')
+                    # Informações do gene que já é parte da solução
+                    # // peso do gene
                     pesoGene:float = self.getPesoDaColuna(gene)
+                    # // linhas que o gene cobre
                     linhasGene:Set[int] = self.getLinhasDaColuna(gene)
-                    #print(f'linhas{gene} = {linhasGene}')
-                    #print(f'linhasCobertas = {linhasCobertas}')
+
+                    # Fazemos a interseção entre as linhas cobertas pelo gene e as linhas cobertas pela coluna
                     intersec:Set[int] = linhasCobertas & linhasGene
-                    #print(f'intersec = {intersec}')
 
+                    # se a coluna cobrir todas as linhas que o gene cobre e seu peso for melhor que o peso do gene, fazemos a troca
+                    # geneRemovido <- o gene a ser removido
+                    # colunaAdicionada <- a coluna melhor do que o gene
                     if len(linhasGene-intersec)==0 and pesoColuna < pesoGene:
-                        #colunasD.remove(coluna)
-                        genes.add(coluna)
-                        genes.remove(gene)
-                        removidas.add(gene)
-                        #print('\n AHHHHH \n')
-                        #print(f'removido = {gene}')
-                        #print(f'adicionado = {coluna}')
+                        geneRemovido = gene
+                        colunaAdicionada = coluna
+                        encontrouMelhoria = True
+                        # encontramos a primeira melhoria, então interrompemos o loop
+                        break
 
-                #print(f'removidas = {removidas}')
-                if len(removidas) != 0:
-                    primeiraMelhoria.setGenes(genes)
-                    primeiraMelhoria.setRedundancias(self._calcularRedundancias(genes))
-                    self._eliminarRedundancias(primeiraMelhoria)
-                    primeiraMelhoria.avaliarQualidade(self.pesoColunas)
-                    #colunasD = colunasD | removidas
-                    #print(f'colunas-disponiveis = {colunasDisponiveis}')
+                if encontrouMelhoria:
+                    break
+            
+            if encontrouMelhoria:
+                # atualizamos a lista de genes com a melhoria
+                genes.remove(geneRemovido)
+                genes.add(colunaAdicionada)
 
-                #colunasD.remove(coluna)
+                # atualizamos o cromossomo com a nova lista de genes
+                # // setamos os novos genes
+                primeiraMelhoria.setGenes(genes)
+                # // recalculamos as redundancias e as setamos
+                primeiraMelhoria.setRedundancias(self._calcularRedundancias(genes))
+                # // eliminamos as redundancias
+                self._eliminarRedundancias(primeiraMelhoria)
+                # // recalculamos a qualidade da solução
+                primeiraMelhoria.avaliarQualidade(self.pesoColunas)
 
+            # ativamos a flag de parada do loop while
+            # chegará aqui quando percorrer todas colunas possíveis e não encontrar melhoria
+            # e/ou quando encontrar melhoria e quebrar os loops
             PARAR = True
-
-        #print('\n -------------------------------------- \n')
-
-
         return primeiraMelhoria
 
     def atualizaPopulacao(self,individuo:Cromossomo) -> bool:
@@ -368,7 +389,7 @@ class Teste():
 
     def gerarColunasPorLinha(self):
         # inicializamos o dicionario
-        for i in range(1,self.getNumLinhas()+1):
+        for i in range(1,self.numLinhas+1):
             key = int(i)
             value = set()
             self._colunasPorLinha.update({key:value})

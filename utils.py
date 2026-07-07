@@ -43,9 +43,9 @@ def ExtraiDados(file) -> Teste:
             index +=1
             if index == 1 or index == 2:
                 meta = ExtrairMetadado(linha)
-                if meta[0] == "LINHAS":
+                if meta[0].upper() == "LINHAS":
                     dados.setNumLinhas(meta[1])
-                elif meta[0] == "COLUNAS":
+                elif meta[0].upper() == "COLUNAS":
                     dados.setNumColunas(meta[1])
             elif index > 3:
                 dadosLinha : List[float]= ExtraiDadosLinha(linha)

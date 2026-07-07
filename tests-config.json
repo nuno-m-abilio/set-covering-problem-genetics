@@ -1,10 +1,10 @@
 {
     "diretorio" : "tests/",
-    "testes" : ["test01.dat","test02.dat","test03.dat","test04.dat","test05.dat","wren01.dat","wren02.dat","wren03.dat","wren04.dat"],
+    "testes" : ["wren02.dat","wren03.dat","wren04.dat"],
     "execucoes" : 10,
     "parametros" : {
-        "tamanho-populacao" : [25,50,100,125,150,200],
-        "taxa-mutacao-minima" : [0.25,0.50,0.75,1.00],
-        "numero-iteracoes" : [100,250,500,750,1000]
+        "tamanho-populacao" : [100],
+        "taxa-mutacao-minima" : [1.00],
+        "numero-iteracoes" : [250]
     }
 }
