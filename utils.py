@@ -1,6 +1,18 @@
-from typing import List, Dict
+from typing import Any, List, Dict, Tuple, Set
+import re
 import csv
+from teste import Teste
 
+
+def ExtrairMetadado(linha:str) -> Tuple[str, int]: 
+    metadado : Tuple[str, int] = ("", -1)
+    lin = re.search(r"LINHAS\s+(\d+)", linha) # type: ignore
+    col = re.search(r"COLUNAS\s+(\d+)", linha) # type: ignore
+    if lin:
+        metadado = ('LINHAS', int(lin.group(1)))
+    elif col:
+        metadado = ('COLUNAS', int(col.group(1)))
+    return metadado
 
 def ExtraiDadosLinha(linha: str) -> List[float]:
     dadosLinha = []
@@ -18,26 +30,39 @@ def ExtraiDadosLinha(linha: str) -> List[float]:
             bufferFlag = True
     return dadosLinha
 
-def ExtraiDados(file) -> List[List[float]]:
-    dados = []
-    numLinhas = 0
+def ExtraiDados(file) -> Teste:
+    dados : Teste = Teste()
+    info = []
+    index = 0
 
     while True:
         linha = file.readline()
         if linha == "":
             break
         else:
-            numLinhas +=1
-            if numLinhas > 3:
+            index +=1
+            if index == 1 or index == 2:
+                meta = ExtrairMetadado(linha)
+                if meta[0].upper() == "LINHAS":
+                    dados.setNumLinhas(meta[1])
+                elif meta[0].upper() == "COLUNAS":
+                    dados.setNumColunas(meta[1])
+            elif index > 3:
                 dadosLinha : List[float]= ExtraiDadosLinha(linha)
-                dados.append(dadosLinha)
+                info.append(dadosLinha)
+            else:
+                continue
+    dados.setDados(info)
+    dados.gerarPesoColunas()
+    dados.gerarLinhasPorColuna()
+    dados.gerarColunasPorLinha()
     return dados
 
-def LerDados(caminho:str) -> List[List[float]]:
-    dados = [[0.0]]
+def LerDados(caminho:str) -> Teste:
+    dados : Teste
     with open(caminho, "+rt") as file:
-        dados : List[List[float]] = ExtraiDados(file)
-
+        dados : Teste = ExtraiDados(file)
+        dados.setLinhasColunas()
     return dados
 
 
@@ -88,3 +113,12 @@ def LerCSV(caminho:str) -> Dict[str, List[float]]:
             data.update(_ToDict(l))
     
     return data
+
+
+class Logger():
+    def __init__(self,fileName:str|None = None):
+        self._filename : str
+
+    def log(self,string:str):
+        
+        return
