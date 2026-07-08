@@ -245,6 +245,36 @@ def tabelaComparativa():
 
     return
 
+def analiseConvergencia():
+
+    # valores que serão plotados
+    iteracoes:List = []
+    melhores:List = []
+    piores:List = []
+
+    # abrimos o arquivo com os dados para a anlise de convergencia
+    with open('analiseConvergencia.json','r',encoding='utf8') as file:
+        data:Dict = json.load(file)
+
+        casoTeste:str = data['Caso']
+        resultados:Dict = data['results']
+
+        for iter, melhorXpior in resultados.items():
+            iteracoes.append(int(iter))
+            melhores.append(melhorXpior['MELHOR'])
+            piores.append(melhorXpior['PIOR'])
+
+        plt.plot(iteracoes,melhores,marker="o", label=f"Melhores")
+        plt.plot(iteracoes,piores,marker="o", label=f"Piores")
+
+        plt.title(f"Analise de Convergencia - {casoTeste}")
+        plt.xlabel("Iterações (10 a 10)")
+        plt.ylabel("Custo")
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+
+    return
+
 if __name__ == "__main__":
-    boxPlot()
-    tabelaComparativa()
+    analiseConvergencia()

@@ -84,6 +84,9 @@ class Execution():
     
     # // default getters and setters
 
+    def getFileName(self) -> str:
+        return self.fileName
+
     def getTamPop(self) -> int:
         return self.tamPop
     
