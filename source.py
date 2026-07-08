@@ -1,6 +1,7 @@
 import utils
+import json
 from teste import Teste
-from typing import List
+from typing import List, Dict
 from cromossomo import Cromossomo
 from execution import Execution
 from time import time
@@ -23,6 +24,9 @@ def run(obj:Execution,i:int) -> Execution:
     t0:float = time()
     dados.gerarPopulacaoInicial()
     
+    # Dicionario para armazenar os dados da analise de convergencia {iteracao:{"melhor":valorMelhor, "pior":valorPior}}
+    analiseConvergencia:Dict = {"Caso":obj.getFileName(),"iterMax":maxIter,"tamPop":obj.getTamPop(),'results':{}}
+
     counter = 0
     iter = 0
     while (iter <= maxIter):
@@ -43,8 +47,13 @@ def run(obj:Execution,i:int) -> Execution:
         if dados.atualizaPopulacao(filho):
             iter += 1
             counter = 0
+            
+            if (iter==1):
+                analiseConvergencia['results'].update({"0":{'MELHOR':dados.getCustoMaisApto(),'PIOR':dados.getCustoMenosApto()}})
+            elif (iter % 10 == 0 or iter==1):
+                analiseConvergencia['results'].update({iter:{'MELHOR':dados.getCustoMaisApto(),'PIOR':dados.getCustoMenosApto()}})
 
-        if counter >= maxIter/4:
+        if counter >= maxIter/2:
             break
 
     tf:float = time()
@@ -59,6 +68,11 @@ def run(obj:Execution,i:int) -> Execution:
         print(f'LINHAS DESCOBERTAS : {dados.getLinhasDescobertas()}')
         print(dados)
 
+    # escrita do documento de analise de convergência
+    with open('analiseConvergencia.json','w',encoding='utf8') as file:
+        json.dump(analiseConvergencia,file,indent=4,ensure_ascii=False)
+
+    # atualização do objeto Execution - para análise dos resultados
     obj.addCost(custoMaisApto)
     obj.addTime(tempoExecucao)
 

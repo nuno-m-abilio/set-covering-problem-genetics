@@ -249,7 +249,7 @@ class Teste():
             colunasQueCobrem : Set = self._colunasPorLinha[linha]
 
             # slecionamos a coluna j que cobre o maior número de linhas descobertas incluindo a *linha*
-            melhorColuna : int = self._melhorColuna(colunasQueCobrem,linhasDescobertas,linha=linha)
+            melhorColuna : int = self._melhorColuna2(linha=linha)
 
             linhasDescobertas.remove(linha)
             
@@ -275,10 +275,23 @@ class Teste():
 
         return individuo
 
+    def _melhorColuna2(self,linha:int|None=None) -> int:
+        coluna = 0
+        if linha is not None:
+            # colunas que cobrem a linha
+            colunasQueCobrem : Set[int] = self.getColunasDaLinha(linha)
+            coluna = random.choice(list(colunasQueCobrem))
+
+            if len(colunasQueCobrem) == 0:
+                print(f'\n 0 Colunas Cobrem a Linha {linha}')
+
+        return coluna
+
+
     def _melhorColuna(self,colunas:Set[int],linhasDescobertas:Set[int],linha:int|None=None, ) -> int:
         melhorColuna = 0
         melhorIndice = float('inf')   
-        melhorCustoPorLinha : float = float('inf') 
+        melhorCustoPorLinha:float = float('inf') 
 
         if linha is not None:
             # colunas que cobrem a linha
@@ -292,6 +305,7 @@ class Teste():
                     custoPorLinha : float = self._taxaCobertura(col,linhasDescobertas)
                     
                     if custoPorLinha < melhorCustoPorLinha:
+                        melhorCustoPorLinha = custoPorLinha
                         melhorColuna = col
 
         else:
