@@ -1,0 +1,10 @@
+{
+    "diretorio" : "tests/",
+    "testes" : ["test01.dat"],
+    "execucoes" : 1,
+    "parametros" : {
+        "tamanho-populacao" : [100],
+        "taxa-mutacao-minima" : [1.00],
+        "numero-iteracoes" : [250]
+    }
+}
